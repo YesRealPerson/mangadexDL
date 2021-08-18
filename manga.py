@@ -29,26 +29,36 @@ while(True):
     print(manga.title["en"])
     print(manga.description["en"])
     volumes = api.get_manga_volumes_and_chapters(self=api, id=manga.id)
-    chapterDict = {str(int(0)):"test"}
-    for x in range(1, len(volumes)+1):
-        chapters = api.chapter_list(self=api, manga=manga.id, volume=str(x))
-        print("Volume: "+str(x))
-        for y in chapters:
-            #print("NOT EN - Chapter:"+str(int(y.chapter))+" "+y.title)
-            if(y.translatedLanguage=="en"):
-                print("Chapter: "+str(int(y.chapter))+" "+y.title)
-                chapterDict.update({str(int(y.chapter)):y.id})
-    downloading = True
-    while(downloading):
-        chapterNumber = input("What chapter do you want to download?   ")
-        pages = api.get_chapter(self=api, id=str(chapterDict[chapterNumber])).fetch_chapter_images()
-        x=0
-        title = re.sub(r'\W+', '', str(manga.title))+str(chapterNumber)
-        os.makedirs(title)
-        for src in pages:
-            name = title+" "+str(x)
-            dl_img(src, title+"/", name)
-            x+=1
-        yesno = input("stop? (type y for yes anything else for no)")
-        if(yesno=="y"):
-            downloading = False
+    chapterDict = {}
+    for x in range(len(volumes)+1):
+        print("Volume: " + str(x)+" "+str(volumes[str(x)]))
+        # chapters = api.chapter_list(self=api, manga=manga.id, volume=x, limit=20)
+        # for y in chapters:
+        #     if(y.translatedLanguage=="en"):
+        #         print("Chapter: "+str(int(y.chapter))+" "+y.title)
+        #         chapterDict.update({str(int(y.chapter)):y.id})
+    if(input("Do you want to download all chapters? (y for yes)")=="y"):
+        for chapterID in chapterDict:
+            pages = api.get_chapter(self=api, id=str(chapterDict[chapterID])).fetch_chapter_images()
+            x = 0
+            title = re.sub(r'\W+', '', str(manga.title)) + str(chapterID)
+            os.makedirs(title)
+            for src in pages:
+                name = title + " " + str(x)
+                dl_img(src, title + "/", name)
+                x += 1
+    else:
+        downloading = True
+        while(downloading):
+            chapterNumber = input("What chapter do you want to download?   ")
+            pages = api.get_chapter(self=api, id=str(chapterDict[chapterNumber])).fetch_chapter_images()
+            x=0
+            title = re.sub(r'\W+', '', str(manga.title))+str(chapterNumber)
+            os.makedirs(title)
+            for src in pages:
+                name = title+" "+str(x)
+                dl_img(src, title+"/", name)
+                x+=1
+            yesno = input("stop? (type y for yes anything else for no)")
+            if(yesno=="y"):
+                downloading = False
