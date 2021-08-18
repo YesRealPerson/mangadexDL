@@ -1,64 +1,75 @@
-import os
+import MangaDexPy
 import mangadex
 import re
 import urllib.request
+import os
 
-api = mangadex.Api
+api = MangaDexPy.MangaDex()
+mdAPI = mangadex.Api()
 
 def dl_img(url, file_path, file_name):
     full_path = file_path+file_name + '.png'
-    print("saving "+full_path)
+    #print("saving "+full_path)
     urllib.request.urlretrieve(url, full_path)
 
+
 while(True):
-    search = input("What is the name of the manga you are looking for?  ")
-    manga_list = api.get_manga_list(self=api,title=search)
-# manga = api.view_manga_by_id(self=mangadex.Api,id="c086153a-0162-412a-9914-a7b2633d0cd3")
-# volumes = api.get_manga_volumes_and_chapters(self=api, id="c086153a-0162-412a-9914-a7b2633d0cd3")
-# returns dictionary usage: volumes["*VOLUME NUMBER*"]
-    for x in manga_list:
-        print(x.title)
-        found = input("Is this the manga you're looking for? (y/n)  ")
-        if(found == "y"):
-            id = x.id
-            manga = api.view_manga_by_id(self=api, id=x.id)
+    search = input("What manga are you looking for?    ")
+    sResults = api.search(obj='manga',params={"title":search}, limit=100)
+    for manga in sResults:
+        print(manga.title)
+        yes = input("Is this the correct title? (y for yes)   ")
+        if(yes=="y"):
+            ID = manga.id
             break
-    if(found!="y"):
-        pass
-    mangadesc = ''.join(i for i in manga.description if not i.isdigit())
-    print(manga.title["en"])
-    print(manga.description["en"])
-    volumes = api.get_manga_volumes_and_chapters(self=api, id=manga.id)
-    chapterDict = {}
-    for x in range(len(volumes)+1):
-        print("Volume: " + str(x)+" "+str(volumes[str(x)]))
-        # chapters = api.chapter_list(self=api, manga=manga.id, volume=x, limit=20)
-        # for y in chapters:
-        #     if(y.translatedLanguage=="en"):
-        #         print("Chapter: "+str(int(y.chapter))+" "+y.title)
-        #         chapterDict.update({str(int(y.chapter)):y.id})
-    if(input("Do you want to download all chapters? (y for yes)")=="y"):
-        for chapterID in chapterDict:
-            pages = api.get_chapter(self=api, id=str(chapterDict[chapterID])).fetch_chapter_images()
-            x = 0
-            title = re.sub(r'\W+', '', str(manga.title)) + str(chapterID)
+    chapters = api.get_manga_chapters(manga)
+    chapDict = {}
+    chapNums = []
+    chapDictTitles = {}
+    for chapter in chapters:
+        if(chapter.language=="en"):
+            if(chapter.chapter in chapNums):
+                net = chapter.get_md_network()
+                page = net.pages[0]
+                if(("mangaplus" not in page)):
+                    chapDict.update({str(chapter.chapter):chapter})
+                    chapDictTitles.update({str(chapter.chapter): str(chapter.title)})
+            else:
+                chapDict.update({str(chapter.chapter): chapter})
+                chapDictTitles.update({str(chapter.chapter): str(chapter.title)})
+                chapNums.append(chapter.chapter)
+    chapNums.sort(key=int)
+    chapNums = list(dict.fromkeys(chapNums))
+    for i in chapNums:
+        print("Chapter: "+i+" "+chapDictTitles[str(i)])
+    toDL = input("type all for all chapters or a number for a specific chapter.    ")
+    if(toDL=="all"):
+        for chap in chapDict:
+            chap = chapDict[str(chap)]
+            title = re.sub(r'\W+', '', str(manga.title)) + str(chap.chapter)
+            net = chap.get_md_network()
+            pages = net.pages
             os.makedirs(title)
-            for src in pages:
-                name = title + " " + str(x)
-                dl_img(src, title + "/", name)
-                x += 1
-    else:
-        downloading = True
-        while(downloading):
-            chapterNumber = input("What chapter do you want to download?   ")
-            pages = api.get_chapter(self=api, id=str(chapterDict[chapterNumber])).fetch_chapter_images()
             x=0
-            title = re.sub(r'\W+', '', str(manga.title))+str(chapterNumber)
-            os.makedirs(title)
-            for src in pages:
-                name = title+" "+str(x)
-                dl_img(src, title+"/", name)
-                x+=1
-            yesno = input("stop? (type y for yes anything else for no)")
-            if(yesno=="y"):
-                downloading = False
+            for page in pages:
+                try:
+                    name = title + " " + str(x)
+                    dl_img(page, title + "/", name)
+                    x += 1
+                except:
+                    print("uh oh problem with chapter "+chap.chapter)
+    else:
+        chap = chapDict[toDL]
+        title = re.sub(r'\W+', '', str(manga.title)) + str(chap.chapter)
+        net = chap.get_md_network()
+        pages = net.pages
+        os.makedirs(title)
+        x = 0
+        for page in pages:
+            try:
+                name = title + " " + str(x)
+                dl_img(page, title + "/", name)
+                x += 1
+            except:
+                print("uh oh problem with chapter " + chap.chapter)
+

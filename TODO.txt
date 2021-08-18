@@ -1,2 +1,0 @@
-- Add more ease of use when selecting manga
-- Ability to queue multiple chapters to download
