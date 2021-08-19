@@ -1,11 +1,9 @@
 import MangaDexPy
-import mangadex
 import re
 import urllib.request
 import os
 
 api = MangaDexPy.MangaDex()
-mdAPI = mangadex.Api()
 
 def dl_img(url, file_path, file_name):
     full_path = file_path+file_name + '.png'
