@@ -35,6 +35,7 @@ public class main {
             sortCList(chapters);
             System.out.println();
             System.out.println("Available chapters:");
+            System.out.println(chapters.size());
             for (chapter value : chapters) {
                 System.out.print(value.getNum() + ", ");
             }
@@ -45,7 +46,7 @@ public class main {
             //Download all
             if(choice.equals("all")) {
                 for (int i = 0; i < chapters.size(); i++) {
-                    int chapter = i + 1;
+                    int chapter = chapters.get(i).getNum();
                     ArrayList<String> pages = getChapPages(chapters.get(i));
                     //save images
                     System.out.println("Saving "+ search + "." + chapter);
@@ -107,7 +108,7 @@ public class main {
     //returns urls of chapter pages
     public static ArrayList<String> getChapPages(chapter c) throws UnirestException {
         String id = c.getId();
-        String[] others = c.getOthers();
+        ArrayList<String> others = c.getOthers();
         boolean success = false;
         ArrayList<String> urls = new ArrayList<>();
         //get baseUrl
@@ -128,17 +129,16 @@ public class main {
                 if (!urls.isEmpty()) success = true;
             }catch(Exception ignore){}
             try{
-                id = others[i++];
+                id = others.get(i++);
             }catch(Exception ignore){
                 if(!success){
-                    System.out.println("Chapter does not exist");
+                    System.out.println("Chapter "+ c.getNum() +" does not exist");
                     break;
                 }
             }
 
         }
         while(success == false);
-        if(!success) System.out.println("Chapter does not exist.");
         return urls;
     }
 
@@ -196,7 +196,8 @@ public class main {
 
     //returns ArrayList with list of available chapters
     public static ArrayList<chapter> getChapters(String id) throws Exception{
-        ArrayList<chapter> chapIDs = new ArrayList<>();
+        HashMap<Integer, chapter> chapIDs = new HashMap<>();
+        ArrayList<chapter> result = new ArrayList<>();
         HttpResponse<JsonNode> search = Unirest.get("https://api.mangadex.org/manga" + "/{request}/aggregate")
                 .routeParam("request", id)
                 .queryString("translatedLanguage[]", Arrays.asList("en"))
@@ -209,29 +210,36 @@ public class main {
             tObj = tObj.getJSONObject("volumes");
         }catch(Exception e){
             System.out.println("No available chapters");
-            return chapIDs;
+            return result;
         }
         tArr = tObj.names();
-        for(int i = 0; i < tArr.length(); i++){
+        for(int i = 0; i < tArr.length(); i++) {
             JSONObject volumes = tObj.getJSONObject(tArr.get(i).toString());
             JSONObject volume = volumes.getJSONObject("chapters");
             JSONArray chNames = volume.names();
-            for(int j = 0; j < chNames.length(); j++){
+            for (int j = 0; j < chNames.length(); j++) {
                 JSONObject chapter = volume.getJSONObject(chNames.get(j).toString());
                 int chNum = Integer.parseInt(chapter.getString("chapter"));
                 String chId = chapter.getString("id");
-                String[] others = JArrToArr(chapter.getJSONArray("others"));
-                chapIDs.add(new chapter(chNum, chId, others));
+                ArrayList<String> others = JArrToArr(chapter.getJSONArray("others"));
+                if (chapIDs.containsKey(chNum)) {
+                    for (String add : others) chapIDs.get(chNum).addOthers(add);
+                    chapIDs.get(chNum).addOthers(chId);
+                } else chapIDs.put(chNum, new chapter(chNum, chId, others));
             }
         }
-        return chapIDs;
+
+        for(Integer key : chapIDs.keySet()){
+            result.add(chapIDs.get(key));
+        }
+        return result;
     }
 
     //returns JSONArray to array
-    public static String[] JArrToArr(JSONArray alternates){
-        String[] result = new String[alternates.length()];
+    public static ArrayList<String> JArrToArr(JSONArray alternates){
+        ArrayList<String> result = new ArrayList<>();
         for(int i = 0; i < alternates.length(); i++){
-            result[i] = alternates.getString(i);
+            result.add(alternates.getString(i));
         }
         return result;
     }
