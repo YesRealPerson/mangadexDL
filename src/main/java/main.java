@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.mashape.unirest.http.HttpResponse;
@@ -31,35 +33,36 @@ public class main {
             ArrayList<chapter> chapters = getChapters(result.get(select).getId());
             if(chapters.isEmpty()) continue;
             sortCList(chapters);
-            for(int i = 0; i < chapters.size(); i++){ System.out.print(chapters.get(i).getNum()+", "); }
             System.out.println();
             System.out.println("Available chapters:");
-            for (int i = 0; i < chapters.size(); i++) { chapters.get(i).getNum(); }
+            for (chapter value : chapters) {
+                System.out.print(value.getNum() + ", ");
+            }
+            System.out.println();
 
             System.out.println("Do you want to download all chapters or one?");
-            String choice = s.next();
-            choice.toLowerCase();
+            String choice = s.next().toLowerCase();
             //Download all
             if(choice.equals("all")) {
                 for (int i = 0; i < chapters.size(); i++) {
                     int chapter = i + 1;
-                    ArrayList<String> pages = getChapPages(chapters.get(i).getId());
+                    ArrayList<String> pages = getChapPages(chapters.get(i));
                     //save images
+                    System.out.println("Saving "+ search + "." + chapter);
                     for (int j = 0; j < pages.size(); j++) {
                         URL url = new URL(pages.get(j));
                         InputStream in = new BufferedInputStream(url.openStream());
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         byte[] buf = new byte[1024];
-                        int n = 0;
+                        int n;
                         while (-1 != (n = in.read(buf))) {
                             out.write(buf, 0, n);
                         }
                         out.close();
                         in.close();
-                        System.out.println("Saving "+ search + "." + String.valueOf(chapter));
                         byte[] response = out.toByteArray();
-                        new File(System.getProperty("user.dir") + "/output/" + search + "." + String.valueOf(chapter)).mkdirs();
-                        FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + String.valueOf(chapter) + "/" + String.valueOf(j) + ".jpg");
+                        new File(System.getProperty("user.dir") + "/output/" + search + "." + chapter).mkdirs();
+                        FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + j+1 + ".jpg");
                         fos.write(response);
                         fos.close();
                     }
@@ -72,28 +75,28 @@ public class main {
                 System.out.println("What chapter do you want to download?");
                 int chapter = s.nextInt();
                 chapter dwn = null;
-                for (int i = 0; i < chapters.size(); i++) {
-                    if (chapter == chapters.get(i).getNum()) {
-                        dwn = chapters.get(i);
+                for (chapter value : chapters) {
+                    if (chapter == value.getNum()) {
+                        dwn = value;
                         break;
                     }
                 }
-                ArrayList<String> pages = getChapPages(dwn.getId());
+                ArrayList<String> pages = getChapPages(dwn);
                 //save images
                 for (int i = 0; i < pages.size(); i++) {
                     URL url = new URL(pages.get(i));
                     InputStream in = new BufferedInputStream(url.openStream());
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     byte[] buf = new byte[1024];
-                    int n = 0;
+                    int n;
                     while (-1 != (n = in.read(buf))) {
                         out.write(buf, 0, n);
                     }
                     out.close();
                     in.close();
                     byte[] response = out.toByteArray();
-                    new File(System.getProperty("user.dir") + "/output/" + search + "." + String.valueOf(chapter)).mkdirs();
-                    FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + String.valueOf(chapter) + "/" + String.valueOf(i) + ".jpg");
+                    new File(System.getProperty("user.dir") + "/output/" + search + "." + chapter).mkdirs();
+                    FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + i + ".jpg");
                     fos.write(response);
                     fos.close();
                 }
@@ -101,35 +104,41 @@ public class main {
         }
     }
 
-    public static ArrayList<String> getChapPages(String id) throws Exception{
-        ArrayList<String> urls = new ArrayList<String>();
+    //returns urls of chapter pages
+    public static ArrayList<String> getChapPages(chapter c) throws UnirestException {
+        String id = c.getId();
+        String[] others = c.getOthers();
+        boolean success = false;
+        ArrayList<String> urls = new ArrayList<>();
         //get baseUrl
-        HttpResponse<JsonNode> url = Unirest.get("https://api.mangadex.org/at-home/server" + "/{request}")
-                .routeParam("request", id)
-                .asJson();
-        JSONObject temp = url.getBody().getObject();
-        String baseUrl = temp.getString("baseUrl");
+        int i = 0;
+        do {
+            try {
+                HttpResponse<JsonNode> url = Unirest.get("https://api.mangadex.org/at-home/server" + "/{request}")
+                        .routeParam("request", id)
+                        .asJson();
+                JSONObject base = url.getBody().getObject();
+                String baseUrl = base.getString("baseUrl");
+                JSONObject chapter = base.getJSONObject("chapter");
+                String hash = chapter.getString("hash");
+                JSONArray images = chapter.getJSONArray("data");
+                for (int j = 0; j < images.length(); j++) {
+                    urls.add(baseUrl + "/data/" + hash + "/" + images.get(j));
+                }
+                if (!urls.isEmpty()) success = true;
+            }catch(Exception ignore){}
+            try{
+                id = others[i++];
+            }catch(Exception ignore){
+                if(!success){
+                    System.out.println("Chapter does not exist");
+                    break;
+                }
+            }
 
-        //get hash and images
-        HttpResponse<JsonNode> chapter = Unirest.get("https://api.mangadex.org/chapter" + "/{request}")
-                .routeParam("request", id)
-                .asJson();
-
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonParser jp = new JsonParser();
-        JsonElement je = jp.parse(chapter.getBody().toString());
-        String prettyJsonString = gson.toJson(je);
-
-        JSONObject json = new JSONObject(prettyJsonString);
-        json = json.getJSONObject("data");
-        json = json.getJSONObject("attributes");
-        //hash
-        String hash = json.getString("hash");
-        //jpg names
-        JSONArray jpgs = json.getJSONArray("data");
-        for(int i = 0; i < jpgs.length(); i++){
-            urls.add(baseUrl+"/data/"+hash+"/"+jpgs.get(i).toString());
         }
+        while(success == false);
+        if(!success) System.out.println("Chapter does not exist.");
         return urls;
     }
 
@@ -144,9 +153,6 @@ public class main {
             list.set(min, list.get(i));
             list.set(i, temp);
         }
-//        for(int i = 0; i < list.size(); i++){
-//            System.out.println(list.get(i).getNum());
-//        }
     }
 
     //returns ArrayList with chapter name, id, description
@@ -155,7 +161,6 @@ public class main {
                 .queryString("title", query)
                 .routeParam("request", "manga")
                 .asJson();
-//        System.out.println(search.getStatus());
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonParser jp = new JsonParser();
@@ -164,7 +169,7 @@ public class main {
 
         JSONObject json = new JSONObject(prettyJsonString);
         JSONArray items = json.getJSONArray("data");
-        ArrayList<manga> titles = new ArrayList<manga>();
+        ArrayList<manga> titles = new ArrayList<>();
         for(int i = 0; i < items.length(); i++){
             JSONObject temp = items.getJSONObject(i);
             JSONObject attributes = temp.getJSONObject("attributes");
@@ -176,14 +181,14 @@ public class main {
                 title = attributes
                         .getJSONObject("title")
                         .getString("en");
-            }catch(Exception e){}
+            }catch(Exception ignored){}
             //get DESC
             String desc = "NO DESCRIPTION";
             try{
                 desc = attributes
                         .getJSONObject("description")
                         .getString("en");
-            }catch(Exception e){}
+            }catch(Exception ignored){}
             titles.add(new manga(title, id, desc));
         }
         return titles;
@@ -191,7 +196,7 @@ public class main {
 
     //returns ArrayList with list of available chapters
     public static ArrayList<chapter> getChapters(String id) throws Exception{
-        ArrayList<chapter> chapIDs = new ArrayList<chapter>();
+        ArrayList<chapter> chapIDs = new ArrayList<>();
         HttpResponse<JsonNode> search = Unirest.get("https://api.mangadex.org/manga" + "/{request}/aggregate")
                 .routeParam("request", id)
                 .queryString("translatedLanguage[]", Arrays.asList("en"))
@@ -215,9 +220,19 @@ public class main {
                 JSONObject chapter = volume.getJSONObject(chNames.get(j).toString());
                 int chNum = Integer.parseInt(chapter.getString("chapter"));
                 String chId = chapter.getString("id");
-                chapIDs.add(new chapter(chNum, chId));
+                String[] others = JArrToArr(chapter.getJSONArray("others"));
+                chapIDs.add(new chapter(chNum, chId, others));
             }
         }
         return chapIDs;
+    }
+
+    //returns JSONArray to array
+    public static String[] JArrToArr(JSONArray alternates){
+        String[] result = new String[alternates.length()];
+        for(int i = 0; i < alternates.length(); i++){
+            result[i] = alternates.getString(i);
+        }
+        return result;
     }
 }
