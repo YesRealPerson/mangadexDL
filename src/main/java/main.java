@@ -14,44 +14,81 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 public class main {
+    static String group = "Not Found";
     public static void main(String[] args) throws Exception {
         while(true) {
-            Scanner s = new Scanner(System.in);
-            System.out.println("_________________________________________________________________________________________________");
-            System.out.println("What are you searching for?");
-            String search = s.nextLine();
-            ArrayList<manga> result = Search(search);
-            int x = 1;
-            for (manga m : result) {
-                System.out.println("_________________");
-                System.out.println(x++);
-                System.out.println(m.getTitle());
-                System.out.println(m.getDesc());
-            }
-            System.out.println("Choose which title is correct");
-            int select = s.nextInt() - 1;
-            ArrayList<chapter> chapters = getChapters(result.get(select).getId());
-            if(chapters.isEmpty()) continue;
-            sortCList(chapters);
-            System.out.println();
-            System.out.println("Available chapters:");
-            System.out.println(chapters.size());
-            for (chapter value : chapters) {
-                System.out.print(value.getNum() + ", ");
-            }
-            System.out.println();
+            try{
+                Scanner s = new Scanner(System.in);
+                System.out.println("_________________________________________________________________________________________________");
+                System.out.println("What are you searching for?");
+                String search = s.nextLine();
+                ArrayList<manga> result = Search(search);
+                int x = 1;
+                for (manga m : result) {
+                    System.out.println("_________________");
+                    System.out.println(x++);
+                    System.out.println(m.getTitle());
+                    System.out.println(m.getDesc());
+                }
+                System.out.println("Choose which title is correct");
+                int select = s.nextInt() - 1;
+                ArrayList<chapter> chapters = getChapters(result.get(select).getId());
+                if(chapters.isEmpty()) continue;
+                sortCList(chapters);
+                System.out.println();
+                System.out.println("Available chapters:");
+                System.out.println(chapters.size());
+                for (chapter value : chapters) {
+                    System.out.print(value.getNum() + ", ");
+                }
+                System.out.println();
 
-            System.out.println("Do you want to download all chapters or one?");
-            String choice = s.next().toLowerCase();
-            //Download all
-            if(choice.equals("all")) {
-                for (int i = 0; i < chapters.size(); i++) {
-                    int chapter = chapters.get(i).getNum();
-                    ArrayList<String> pages = getChapPages(chapters.get(i));
+                System.out.println("Do you want to download all chapters or one?");
+                String choice = s.next().toLowerCase();
+                //Download all
+                if(choice.equals("all")) {
+                    for (int i = 0; i < chapters.size(); i++) {
+                        int chapter = chapters.get(i).getNum();
+                        ArrayList<String> pages = getChapPages(chapters.get(i));
+                        System.out.println(group);
+                        //save images
+                        System.out.println("Saving "+ search + "." + chapter);
+                        for (int j = 0; j < pages.size(); j++) {
+                            URL url = new URL(pages.get(j));
+                            InputStream in = new BufferedInputStream(url.openStream());
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            byte[] buf = new byte[1024];
+                            int n;
+                            while (-1 != (n = in.read(buf))) {
+                                out.write(buf, 0, n);
+                            }
+                            out.close();
+                            in.close();
+                            byte[] response = out.toByteArray();
+                            new File(System.getProperty("user.dir") + "/output/" + search + "." + chapter).mkdirs();
+                            FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + j+1 + ".jpg");
+                            fos.write(response);
+                            fos.close();
+                        }
+                    }
+                }
+
+
+                //Download 1 chapter
+                else {
+                    System.out.println("What chapter do you want to download?");
+                    int chapter = s.nextInt();
+                    chapter dwn = null;
+                    for (chapter value : chapters) {
+                        if (chapter == value.getNum()) {
+                            dwn = value;
+                            break;
+                        }
+                    }
+                    ArrayList<String> pages = getChapPages(dwn);
                     //save images
-                    System.out.println("Saving "+ search + "." + chapter);
-                    for (int j = 0; j < pages.size(); j++) {
-                        URL url = new URL(pages.get(j));
+                    for (int i = 0; i < pages.size(); i++) {
+                        URL url = new URL(pages.get(i));
                         InputStream in = new BufferedInputStream(url.openStream());
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         byte[] buf = new byte[1024];
@@ -63,44 +100,14 @@ public class main {
                         in.close();
                         byte[] response = out.toByteArray();
                         new File(System.getProperty("user.dir") + "/output/" + search + "." + chapter).mkdirs();
-                        FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + j+1 + ".jpg");
+                        FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + i + " scanlated by "+group+".jpg");
                         fos.write(response);
                         fos.close();
                     }
                 }
-            }
-
-
-            //Download 1 chapter
-            else {
-                System.out.println("What chapter do you want to download?");
-                int chapter = s.nextInt();
-                chapter dwn = null;
-                for (chapter value : chapters) {
-                    if (chapter == value.getNum()) {
-                        dwn = value;
-                        break;
-                    }
-                }
-                ArrayList<String> pages = getChapPages(dwn);
-                //save images
-                for (int i = 0; i < pages.size(); i++) {
-                    URL url = new URL(pages.get(i));
-                    InputStream in = new BufferedInputStream(url.openStream());
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    byte[] buf = new byte[1024];
-                    int n;
-                    while (-1 != (n = in.read(buf))) {
-                        out.write(buf, 0, n);
-                    }
-                    out.close();
-                    in.close();
-                    byte[] response = out.toByteArray();
-                    new File(System.getProperty("user.dir") + "/output/" + search + "." + chapter).mkdirs();
-                    FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + search + "." + chapter + "/" + i + ".jpg");
-                    fos.write(response);
-                    fos.close();
-                }
+            }catch (Exception e){
+                System.out.println(e);
+                System.out.println("Something went wrong, please try again");
             }
         }
     }
@@ -126,13 +133,25 @@ public class main {
                 for (int j = 0; j < images.length(); j++) {
                     urls.add(baseUrl + "/data/" + hash + "/" + images.get(j));
                 }
-                if (!urls.isEmpty()) success = true;
+                if (!urls.isEmpty()) {
+                    success = true;
+                    url = Unirest.get("https://api.mangadex.org/chapter" + "/{request}")
+                            .routeParam("request", id)
+                            .asJson();
+                    base = url.getBody().getObject();
+                    String groupID =((JSONObject) base.getJSONObject("data").getJSONArray("relationships").get(0)).getString("id");
+                    url = Unirest.get("https://api.mangadex.org/group" + "/{request}")
+                            .routeParam("request", groupID)
+                            .asJson();
+                    base = url.getBody().getObject();
+                    group = base.getJSONObject("data").getJSONObject("attributes").getString("name");
+                }
             }catch(Exception ignore){}
             try{
                 id = others.get(i++);
             }catch(Exception ignore){
                 if(!success){
-                    System.out.println("Chapter "+ c.getNum() +" does not exist");
+                    System.out.println("Chapter "+ c.getNum() +" does not exist or is not hosted on MangaDex");
                     break;
                 }
             }
