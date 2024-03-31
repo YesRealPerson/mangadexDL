@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <script src="downloader.js"></script>
+    <title>MangaDexDL</title>
+  </head>
+  <body>
+    <h1>
+        MangaDex Downloader
+    </h1>
+    <div id="searchDiv">
+        <input id="searchBox" placeholder="Enter a Manga title!" type="text">
+        <button onclick="submit()">Search</button>
+        <button onclick="download()">Download</button>
+    </div>
+    <div id="current">
+    </div>
+    <div id="output">
+    </div>
+    <div id="overlay">Please Wait! <br> <span id="status"></span></div>
+  </body>
+</html>
