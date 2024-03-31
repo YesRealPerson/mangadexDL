@@ -6,11 +6,21 @@ let selectTitle = undefined;
 let scanlations = {};
 
 // Function
-
-const HtmlEncode = (s) => {
-  return s.replaceAll(" ", "+").replaceAll("&", "and").replaceAll("=", "equals");
+function clean(str) {
+    str = str.replaceAll("/", "");
+    str = str.replaceAll(">", "");
+    str = str.replaceAll("<", "");
+    str = str.replaceAll(":", "");
+    str = str.replaceAll("\"", "");
+    str = str.replaceAll("\\", "");
+    str = str.replaceAll("|", "");
+    str = str.replaceAll("?", "");
+    str = str.replaceAll("*", "");
+    str = str.replaceAll("#", "");
+    str = str.replaceAll(" ", "+");
+    str = str.replaceAll("=", "equals");
+    return str;
 }
-
 const overlay = (onoff) => {
     let ele = document.getElementById("overlay");
     if(onoff){
@@ -172,7 +182,7 @@ const download = async () => {
             group = group.replaceAll("&", "");
 
             status.innerText = "Currently Downloading: Chapter "+num;
-            let r = await fetch(url+`/download?id=${id}&num=${num}&title="${HtmlEncode(selectTitle)}"&group="${HtmlEncode(group)}"&chapterTitle="${HtmlEncode(chapterTitle)}"`);
+            let r = await fetch(url+`/download?id=${id}&num=${num}&title="${clean(selectTitle)}"&group="${clean(group)}"&chapterTitle="${clean(chapterTitle)}"`);
             console.log(r.status);  
             if(r.status!=400){         
                 for(let k = 3; k > 0; k--){

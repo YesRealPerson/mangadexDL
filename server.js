@@ -120,7 +120,9 @@ app.get("/download", async (req, res) => {
                     let broken = false;
                     for (let j = 0; j < pages.length; j++) {
                         page = pages[j];
-                        if(broken) break;
+                        if(broken) {
+                            break;
+                        };
                         try{
                         request
                             .get(`${base}/data/${hash}/${page}`,{headers: {"User-Agent": 'YesRealPerson/mangadexDL NodeJS Request Library'}})
@@ -145,6 +147,8 @@ app.get("/download", async (req, res) => {
             res.status(400).send("You already have this chapter downloaded!");
         }
         res.status(200);
+    }else{
+        res.status(401);
     }
 });
 
