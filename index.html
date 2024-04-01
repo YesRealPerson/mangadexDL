@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <meta charset="UTF-8">
-    <script src="downloader.js"></script>
-    <title>MangaDexDL</title>
+    <title>Reader</title>
   </head>
   <body>
-    <h1>
-        MangaDex Downloader
-    </h1>
-    <div id="searchDiv">
-        <input id="searchBox" placeholder="Enter a Manga title!" type="text">
-        <button onclick="submit()">Search</button>
-        <button onclick="download()">Download</button>
-    </div>
-    <div id="current">
-    </div>
-    <div id="output">
-    </div>
-    <div id="overlay">Please Wait! <br> <span id="status"></span></div>
+    <content>
+      <div id="sidebar">
+        <span id="header">Reader</span><br><br>
+        <select id="mangaSelect">
+          <option id="NoneManga">None</option>
+        </select><br><br>
+        <select id="chapterSelect">
+          <option id="NoneChapter">None</option>
+        </select><br><br>
+        <span id="scanlator"></span><br><br>
+        <a href="downloadPage.html">To Downloader</a>
+      </div>
+      <div id="images">
+        <div style="width: 100%; height: 100%; justify-content: center; align-items: center; display: flex;"><div>No Chapter Selected</div></div>
+      </div>
+    </content>
   </body>
+  <script src="reader.js"></script>
 </html>

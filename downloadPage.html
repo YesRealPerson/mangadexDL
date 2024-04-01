@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <script src="downloader.js"></script>
+    <title>MangaDexDL</title>
+  </head>
+  <body>
+    <header>
+      <div>Downloader</div>
+      <a href="./">To Reader</a>
+    </header>
+    <div id="searchDiv">
+        <input id="searchBox" placeholder="Enter a Manga title!" type="text">
+        <button onclick="submit()">Search</button>
+        <button onclick="download()">Download</button>
+    </div>
+    <div id="current">
+    </div>
+    <div id="output">
+    </div>
+    <div id="overlay">Please Wait! <br> <span id="status"></span></div>
+  </body>
+</html>

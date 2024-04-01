@@ -19,6 +19,7 @@ function clean(str) {
     str = str.replaceAll("#", "");
     str = str.replaceAll(" ", "+");
     str = str.replaceAll("=", "equals");
+    str = str.replaceAll("&", "and");
     return str;
 }
 const overlay = (onoff) => {
@@ -182,7 +183,7 @@ const download = async () => {
             group = group.replaceAll("&", "");
 
             status.innerText = "Currently Downloading: Chapter "+num;
-            let r = await fetch(url+`/download?id=${id}&num=${num}&title="${clean(selectTitle)}"&group="${clean(group)}"&chapterTitle="${clean(chapterTitle)}"`);
+            let r = await fetch(url+`/download?id=${id}&num=${num}&title="${clean(""+selectTitle)}"&group="${clean(""+group)}"&chapterTitle="${clean(""+chapterTitle)}"&time=${Date.now()}`);
             console.log(r.status);  
             if(r.status!=400){         
                 for(let k = 3; k > 0; k--){
