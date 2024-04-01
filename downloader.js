@@ -187,7 +187,7 @@ const download = async () => {
             console.log(r.status);  
             if(r.status!=400){         
                 for(let k = 3; k > 0; k--){
-                    status.innerText = "Done, waiting "+k+" seconds to avoid rate limit";
+                    status.innerHTML = `Finished downloading chapter ${num}!<br>Waiting ${k} seconds in accordance with rate limit!`;
                     await new Promise(r => setTimeout(r, 1000));
                 }
             }
